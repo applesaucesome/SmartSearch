@@ -8,6 +8,7 @@ public class SmartSearch : MonoBehaviour {
 
     public Transform searchResults;
 
+    public List<string> data = new List<string>() { "test", "blah", "cat", "dog" };
 	// Use this for initialization
 	void Start () {
 		

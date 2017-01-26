@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,20 +11,13 @@ public class SmartSearch : MonoBehaviour {
     private string searchTerm;
     private string query;
     private int maxListItemsPerCat = 8;
-    private bool shown;
+
 
     public Transform searchResults;
     
     public List<string> data = new List<string>() { "test", "blah", "cat", "dog" };
-	// Use this for initialization
-	void Start () {
-		
-	}
+
 	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 
     private string Sorter(List<string> items) {
         List<string> beginswith = new List<string>();
@@ -62,28 +56,31 @@ public class SmartSearch : MonoBehaviour {
 
     private void Process(Dictionary<string, List<string>> source) {
 
-        foreach (string key in source.Keys) {
-            dynamic val = source[key];
+        foreach (List<string> val in source) {
 
-            source[key] = Matcher(val);
-            source[key] = Sorter(val);
+            string myKey = source.FirstOrDefault(x => x.Value == val).Key;
 
-            source[key] = source[key].GetRange(0, maxListItemsPerCat);
+            // Need to figure out how to pass the param to Matcher()
+            source[myKey] = val.Where(Matcher(x));
+            source[myKey] = Sorter(val);
+
+            source[myKey] = source[myKey].GetRange(0, maxListItemsPerCat);
 
         }
 
 
 
         if (!source.ContainsKey("tags") && !source.ContainsKey("titles")) {
-            shown ? searchResults.gameObject.SetActive(false) : searchResults.gameObject.SetActive(true);
+
+                searchResults.gameObject.SetActive(false);
+            
+        } else {
+            searchResults.gameObject.SetActive(true);
         }
 
 
-
-        //return self.render(source).show();
-
     }
-    private string Matcher(string item) {
+    private List<string> Matcher(string item) {
         string origSearchTerm = item;
         string searchTerm = item.ToLower();
         string query = this.query.ToLower();

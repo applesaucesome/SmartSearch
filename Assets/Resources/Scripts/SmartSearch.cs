@@ -11,15 +11,22 @@ public class SmartSearch : MonoBehaviour {
     private string searchTerm;
     private string query;
     private int maxListItemsPerCat = 8;
+    private int minLength = 1;
 
 
     public Transform searchResults;
-    
-    public List<string> data = new List<string>() { "test", "blah", "cat", "dog" };
 
+
+    private Dictionary<string, List<string>> data = new Dictionary<string, List<string>>();
+
+    void Start() {
+        data.Add("Tags", new List<string>() { "test", "blah", "cat", "dog" });
+        data.Add("Titles", new List<string>() { "apples", "oranges", "beets", "pears" });
+    }
 	
 
-    private string Sorter(List<string> items) {
+    private List<string> Sorter(List<string> items) {
+
         List<string> beginswith = new List<string>();
         List <string> caseSensitive = new List<string>();
         List<string> caseInsensitive = new List<string>();
@@ -48,29 +55,50 @@ public class SmartSearch : MonoBehaviour {
 
         beginswith.AddRange(caseSensitive);
 
-        string concatResults = string.Join("", beginswith.ToArray());
+        return beginswith;
+        //string concatResults = string.Join("", beginswith.ToArray());
 
-        return concatResults;
+        //return concatResults;
     }
 
 
-    private void Process(Dictionary<string, List<string>> source) {
+    private void Lookup(string query) { 
 
-        foreach (List<string> val in source) {
+        if (query.Length < minLength) {
 
-            string myKey = source.FirstOrDefault(x => x.Value == val).Key;
-
-            // Need to figure out how to pass the param to Matcher()
-            source[myKey] = val.Where(Matcher(x));
-            source[myKey] = Sorter(val);
-
-            source[myKey] = source[myKey].GetRange(0, maxListItemsPerCat);
-
+            if (searchResults.gameObject.activeInHierarchy) {
+                searchResults.gameObject.SetActive(false);
+            } else {
+                searchResults.gameObject.SetActive(true);
+            }
+            
         }
 
 
+        Process(data);
 
-        if (!source.ContainsKey("tags") && !source.ContainsKey("titles")) {
+
+    }
+
+    private void Process(Dictionary<string, List<string>> source) {
+
+
+        Dictionary<string, List<string>> temp = new Dictionary<string, List<string>>();
+        foreach (KeyValuePair<string, List<string>> val in source) {
+            
+            val.Value.ForEach(p => Matcher(p));
+
+            temp[val.Key] = Sorter(val.Value);
+
+            temp[val.Key] = source[val.Key].GetRange(0, maxListItemsPerCat);
+            
+        }
+
+        foreach (KeyValuePair<string, List<string>> val in temp) {
+            Debug.Log("TESTING " + val.Key + "= " + val.Value);
+        }
+
+            if (!temp.ContainsKey("tags") && !temp.ContainsKey("titles")) {
 
                 searchResults.gameObject.SetActive(false);
             
@@ -80,7 +108,7 @@ public class SmartSearch : MonoBehaviour {
 
 
     }
-    private List<string> Matcher(string item) {
+    private string Matcher(string item) {
         string origSearchTerm = item;
         string searchTerm = item.ToLower();
         string query = this.query.ToLower();
@@ -125,8 +153,9 @@ public class SmartSearch : MonoBehaviour {
     public void OnTextChange(string val) {
         Debug.Log("TEXT CHANGED: " + val);
 
-        GameObject result = new GameObject("Result", typeof(Text));
 
+        Lookup(val);
+        GameObject result = new GameObject("Result", typeof(Text));
         string resultText = "BABABOOEY";
         result.name = resultText;
         result.GetComponent<Text>().text = resultText;
